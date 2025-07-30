@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Speech Comparison</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { 
+            background-color: #121212; 
+            color: white;
+            padding: 20px;
+        }
+        .reference-text {
+            font-size: 1.2rem;
+            margin-bottom: 30px;
+            padding: 15px;
+            background-color: #333;
+            border-radius: 5px;
+        }
+        .spoken-text {
+            font-size: 1.2rem;
+            margin-top: 30px;
+            padding: 15px;
+            background-color: #333;
+            border-radius: 5px;
+        }
+        .word {
+            display: inline-block;
+            margin: 2px;
+            padding: 3px 6px;
+            border-radius: 3px;
+        }
+        .correct {
+            background-color: #28a745; /* Green */
+        }
+        .partial {
+            background-color: #ffc107; /* Yellow */
+            color: black;
+        }
+        .incorrect {
+            background-color: #dc3545; /* Red */
+        }
+        .status {
+            margin: 20px 0;
+            font-size: 1.1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-center mb-4">Speech Comparison</h1>
+        
+        <div class="reference-text">
+            <h3>Reference Text:</h3>
+            <div id="referenceDisplay"></div>
+        </div>
+        
+        <div class="status">
+            <div id="statusMessage">Press and hold the record key to speak...</div>
+            <div id="accuracy"></div>
+        </div>
+        
+        <div class="spoken-text">
+            <h3>Your Speech:</h3>
+            <div id="spokenDisplay"></div>
+        </div>
+    </div>
+
+    <script>
+        let display_refrence_bool = false;
+        let referenceText = "";
+        let lastSpokenText = "";
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'PageUp') {
+                event.preventDefault();
+                display_refrence_bool = !display_refrence_bool;
+                console.log(`PageUp pressed. Toggle is now: ${display_refrence_bool}`);
+                displayReferenceText();
+            }
+        });
+
+        function updateDisplay(data) {
+            if (!referenceText && data.reference) {
+                referenceText = data.reference;
+            }
+            displayReferenceText();
+            
+            if (data.text && data.text !== lastSpokenText) {
+                lastSpokenText = data.text;
+                displaySpokenText(data.comparison);
+                calculateAccuracy(data.comparison);
+                document.getElementById('statusMessage').textContent = "Last recorded: " + new Date().toLocaleTimeString();
+            }
+        }
+
+        function displayReferenceText() {
+            const container = document.getElementById('referenceDisplay');
+            container.innerHTML = '';
+            
+            if (display_refrence_bool && referenceText) {
+                const words = referenceText.split(' ');
+                words.forEach(word => {
+                    const span = document.createElement('span');
+                    span.className = 'word';
+                    span.textContent = word + ' ';
+                    container.appendChild(span);
+                });
+            } else if (referenceText) {
+                container.innerHTML = '<em>Reference text hidden (press PageUp to show)</em>';
+            } else {
+                container.innerHTML = '<em>No reference text available</em>';
+            }
+        }
+
+        function displaySpokenText(comparison) {
+            const container = document.getElementById('spokenDisplay');
+            container.innerHTML = '';
+            
+            comparison.forEach(item => {
+                const span = document.createElement('span');
+                span.className = 'word ' + (
+                    item.rate === 'h' ? 'correct' :
+                    item.rate === 'm' ? 'partial' : 'incorrect'
+                );
+                span.textContent = item.word + ' ';
+                
+                if (item.rate !== 'h') {
+                    span.title = `Expected: ${item.expected || 'nothing'}`;
+                }
+                
+                container.appendChild(span);
+            });
+        }
+
+        function calculateAccuracy(comparison) {
+            if (comparison.length === 0) return;
+            
+            const correct = comparison.filter(item => item.rate === 'h').length;
+            const partial = comparison.filter(item => item.rate === 'm').length;
+            const accuracy = (correct + (partial * 0.5)) / comparison.length * 100;
+            
+            document.getElementById('accuracy').innerHTML = `
+                <strong>Accuracy:</strong> ${accuracy.toFixed(1)}%<br>
+                <small>${correct} perfect matches, ${partial} partial matches</small>
+            `;
+        }
+
+        function fetchTranscription() {
+            fetch('http://localhost:5000/get_transcription')
+                .then(response => response.json())
+                .then(data => updateDisplay(data))
+                .catch(error => console.error('Error:', error));
+            
+            setTimeout(fetchTranscription, 500);
+        }
+
+        // Start when page loads
+        window.onload = fetchTranscription;
+    </script>
+</body>
+</html>
