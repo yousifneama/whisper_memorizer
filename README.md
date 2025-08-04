@@ -4,12 +4,6 @@ A lightweight web app that helps you memorize anything using voice input powered
 
 ![App Screenshot](./screenshot.png)
 
-## Features
-- 🎤 Speak your notes - converts speech to text automatically
-- 📝 Create memory cards from your voice notes
-- 🔁 Smart repetition system to boost retention
-- 🌐 Works in your browser
-
 ## Quick Start
 
 1. Clone the repo:
