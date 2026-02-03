@@ -7,7 +7,6 @@
 
 ## 🧾 Features
 
-- 🎤 **Real-time voice recording** via keyboard (PageDown key)  
 - 🔹 **Transcription using Faster Whisper** for fast and accurate speech-to-text  
 - 🔹 **Word-by-word comparison** with a reference text  
 - 🔹 Highlights words as:  
